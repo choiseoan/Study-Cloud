@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="product">	
+
+
+<resultMap type="pdto" id="pdtoMap">
+	<id column="pro_Num" property="proNum"/>
+	<result column="pro_Name" property="proName"/>
+	<result column="pro_Address" property="proAddress"/>
+	<result column="pro_Phone" property="proPhone"/>
+	
+	<result column="mem_id" property="memId"/>
+	<result column="pro_Post" property="proPost"/>
+	<result column="pro_Info" property="proInfo"/>
+	<result column="pro_Notice" property="proNotice"/>
+	<result column="pro_Refund" property="proRefund"/>
+	<result column="pro_Zipcode" property="proZipcode"/>
+	
+	 <collection column="pro_Num" property="timePriceList" ofType="study.cloud.stc.product.model.vo.ProductTimePriceDto">
+		<result column="pro_Date" property="time"/>
+		<result column="pro_Price" property="price"/>
+	</collection> 
+	
+ 	<collection column="pro_Num" property="picList" ofType="study.cloud.stc.product.model.vo.ProductPicDto">
+		<result column="pro_pic_original" property="proPicOriginal"/>
+		<result column="pro_pic_rename" property="proPicRename"/>
+	</collection> 
+</resultMap>	
+
+	<insert id="insertProduct" parameterType="pdto">
+		<selectKey keyProperty="proNum" resultType="int" order="BEFORE">
+			select seq_pro_num.nextval from dual
+		</selectKey>
+		insert into map values( #{proNum}, #{proName},#{proAddress},#{proPhone})
+	</insert>
+
+
+	<insert id="insertProduct2" parameterType="pdto">
+		INSERT ALL 
+		INTO PRODUCT VALUES 	(#{proNum}, #{memId},#{proPost},#{proInfo},#{proNotice},#{proRefund},#{proZipcode})
+		<foreach collection="picList" item="pic">
+		INTO PRODUCTFILE VALUES	(#{proNum},
+		 #{pic.proPicOriginal},#{pic.proPicRename})
+		</foreach>
+		select * from dual
+	</insert>
+	
+	
+	<insert id="insertProductFile" parameterType="pdto">
+	insert into productfile
+	values
+	(#{proNum}, #{proPicOriginal},#{proPicRename})
+	</insert>
+		
+	<!-- productList 화면 -->
+	<select id="selectList" resultType="pdvo">
+		SELECT PRO_NUM
+      		 , PRO_NAME
+             , PRO_ADDRESS
+             , PRO_PHONE
+             , MIN(PRO_PRICE) AS PRO_PRICE
+		  FROM MAP 
+    LEFT OUTER JOIN PRODUCT
+         USING (PRO_NUM)
+    LEFT OUTER JOIN PROTIME 
+         USING (PRO_NUM)
+   <trim prefix="WHERE" prefixOverrides="AND|OR">
+       <if test="proAddress != null and proAddress neq ''">
+         PRO_ADDRESS LIKE '%'||#{proAddress}||'%'
+       </if>       
+       <if test="proDate != null and proDate neq ''">
+         OR to_char(PRO_DATE,'yyyy-mm-dd') IN #{proDate}
+       </if>
+   </trim>         
+         GROUP BY (PRO_NUM, PRO_NAME, PRO_ADDRESS, PRO_PHONE)
+       <if test="proPrice != null and proPrice neq ''">
+         HAVING MIN(PRO_PRICE) = #{proPrice}
+       </if>
+         ORDER BY PRO_NUM DESC
+	</select>
+	
+	<!-- productList 페이징 count -->
+	<select id="selectOneCount" resultType="_int">
+	SELECT COUNT(DISTINCT PRO_NUM) CNT
+	  FROM MAP 
+      LEFT OUTER JOIN PRODUCT
+     USING (PRO_NUM)
+	<if test="proPrice != null and proPrice neq ''">
+      LEFT OUTER JOIN PROTIME 
+     USING (PRO_NUM) 
+	</if>
+	<if test="proDate != null and proDate neq ''">
+      LEFT OUTER JOIN PROTIME 
+     USING (PRO_NUM) 
+	</if>
+	<trim prefix="WHERE" prefixOverrides="AND|OR">
+       <if test="proAddress != null and proAddress neq ''">
+         PRO_ADDRESS LIKE '%'||#{proAddress}||'%'
+       </if>
+       <if test="proPrice != null and proPrice neq ''">
+         OR PRO_PRICE = #{proPrice}
+       </if>
+       <if test="proDate != null and proDate neq ''">
+         OR to_char(PRO_DATE,'yyyy-mm-dd') IN #{proDate}
+       </if>
+    </trim> 
+    </select>
+	
+	
+	
+	
+<!-- 	상세 페이지 화면 -->
+	<!-- <select id="proDetail"  resultType="pdto">
+	SELECT
+			pro_num 
+		  ,pro_name
+		  ,pro_post
+		  ,pro_info
+		  ,pro_notice
+		  ,pro_refund
+		  ,pro_phone
+		  from map
+    LEFT OUTER JOIN PRODUCT
+         USING (PRO_NUM)
+    LEFT OUTER JOIN PROTIME 
+         USING (PRO_NUM)
+         where pro_num = #{proNum}
+	WHERE PRO_NUM LIKE '%'||#{proNum}||'%'
+
+	</select> -->
+	<select id="proDetail"  resultMap="pdtoMap">
+	SELECT pro_num, pro_name, pro_address, pro_phone, mem_id, pro_post, pro_info, pro_notice, pro_refund, pro_zipcode, pro_date, pro_price, rsv_num, pro_pic_original, pro_pic_rename
+		  FROM (SELECT * FROM MAP where PRO_NUM = #{proNum}) tb_m
+			LEFT OUTER JOIN (SELECT * FROM PRODUCT where PRO_NUM = #{proNum})  USING (PRO_NUM)
+			LEFT OUTER JOIN ( SELECT pro_date, pro_price, rsv_num, PRO_NUM FROM PROTIME  where PRO_NUM = #{proNum}
+		                            <!-- and to_char(pro_date, 'yy/mm/dd hh24') = to_char(sysdate, 'yy/mm/dd hh24') -->
+		                            ) tb_price using(PRO_NUM)
+		    LEFT OUTER JOIN (SELECT * FROM PRODUCTFILE where PRO_NUM = #{proNum}) tb_pic  USING (PRO_NUM) 
+	</select>
+	<!-- product detail qna -->
+	<insert id="insertQna" parameterType="qvo">
+		INSERT INTO QNA VALUES(
+		       #{proNum}
+	    	 , (SELECT PRO_NAME FROM MAP WHERE PRO_NUM = #{proNum})
+			 , #{memId}
+		     , #{memQuestion}
+			 , (SELECT MEM_AUTHORITY FROM MEMBER WHERE MEM_ID = #{memId})
+			 , NULL
+		     , SYSDATE
+		     , (SELECT NVL(MAX(QNA_NUM), 0)+1 FROM QNA)
+		)
+	</insert>
+		
+	<update id="updateQna" parameterType="qvo">
+		UPDATE QNA
+   		   SET MEM_QUESTION = #{memQuestion}
+         WHERE QNA_NUM = #{qnaNum}
+	</update>
+	
+	<update id="updateReply" parameterType="qvo">
+		UPDATE QNA
+   		   SET HOST_ANSWER = #{hostAnswer}
+         WHERE QNA_NUM = #{qnaNum}
+	</update>
+	
+	<delete id="deleteQna" parameterType="qvo">
+		DELETE FROM QNA WHERE QNA_NUM = #{qnaNum}
+	</delete>
+	
+	<!-- detail/qna, host/qna 페이징 count -->
+	<select id="selectQnaCount" resultType="_int">
+		SELECT COUNT(*) FROM QNA WHERE PRO_NUM = #{proNum}
+	</select>
+	
+	<select id="selectQnaList" resultType="qvo">
+		SELECT * 
+		  FROM QNA
+	    <if test="proNum != null and proNum neq ''">
+         WHERE PRO_NUM = #{proNum}
+   	    </if>		 
+		 ORDER BY QNA_DATE DESC
+	</select>
+	
+	<!-- detail/review -->
+	<select id="userRsvProName" resultType="study.cloud.stc.review.model.vo.ReviewResReqVo">
+		SELECT PRO_NUM, (select PRO_NAME from map where PRO_NUM = r.PRO_NUM) PRO_NAME
+		FROM RESERVE r
+		WHERE MEM_ID = #{memId} 
+		group by PRO_NUM 
+		ORDER BY MIN(REG_DATE) desc
+	</select>
+	<select id="userRsvNum" resultType="study.cloud.stc.review.model.vo.ReviewResReqVo">
+		SELECT PRO_NUM, (select PRO_NAME from map where PRO_NUM = r.PRO_NUM) PRO_NAME, MEM_ID, REG_DATE, MIN(RSV_NUM) RSV_NUMBER
+		FROM (SELECT PRO_NUM, MEM_ID, REG_DATE, RSV_NUM 
+				FROM RESERVE) r
+        WHERE MEM_ID = #{memId}
+		GROUP BY PRO_NUM, PRO_NUM, MEM_ID, REG_DATE 
+		ORDER BY MIN(RSV_NUM)
+	</select>
+	<select id="userRsvNumSelect" resultType="study.cloud.stc.review.model.vo.ReviewResReqVo">
+		SELECT MEM_ID, REG_DATE, MIN(RSV_NUM) RSV_NUMBER, (SELECT PRO_NAME FROM MAP WHERE PRO_NUM = #{proNum}) PRO_NAME
+		FROM (SELECT MEM_ID, REG_DATE, RSV_NUM 
+				FROM RESERVE 
+				WHERE PRO_NUM = #{proNum})
+		GROUP BY MEM_ID, REG_DATE 
+		ORDER BY MIN(RSV_NUM)
+	</select>
+	
+	
+	<!-- 호스트 & 어드민 상품목록 -->
+	
+	
+	<select id="adminProductList" resultType="hostProDto">
+	select
+		 pro_num
+        ,pro_name
+        ,pro_address
+        ,pro_phone
+        ,mem_id
+        ,mem_authority
+        ,pro_pic_Original
+        ,pro_pic_Rename
+        from map
+        left outer join product
+        using (pro_num)
+        left outer join member
+        using (mem_id)
+        LEFT OUTER JOIN PRODUCTFILE 
+	     USING (PRO_NUM)
+<!-- 	     where mem_id = #{memId} -->
+         order by pro_num desc
+	</select>
+	
+	<resultMap type="hostProDto" id="hostProDtoResultMap">
+		<id column="pro_num" property="proNum"/>
+		<result column="pro_name" property="proName"/>
+		<result column="pro_address" property="proAddress"/>
+		<result column="pro_phone" property="proPhone"/>
+		<result column="mem_id" property="memId"/>
+		<result column="mem_authority" property="memAuthority"/>
+
+		<collection property="picList" ofType="study.cloud.stc.product.model.vo.ProductPicDto">
+			<result column="pro_pic_Original" property="proPicOriginal"/>
+			<result column="pro_pic_Rename" property="proPicRename"/>
+		</collection>	
+	</resultMap>
+	<select id="hostProductList" resultMap="hostProDtoResultMap" >
+<!-- 	<select id="hostProductList" resultType="hostProDto"> -->
+	select
+		 pro_num
+        ,pro_name
+        ,pro_address
+        ,pro_phone
+        ,mem_id
+<!--         ,mem_authority -->
+        ,pro_pic_Original
+        ,pro_pic_Rename
+        from map
+	        left outer join product        using (pro_num)
+<!-- 	        left outer join member        using (mem_id) -->
+	        LEFT OUTER JOIN PRODUCTFILE	     USING (PRO_NUM)
+	     WHERE MEM_ID = #{memId}
+	     order by pro_num desc
+	 	</select>
+	
+	
+	<select id="productOneCnt" resultType="_int">
+	SELECT COUNT(*) CNT
+	  FROM MAP 
+     	LEFT OUTER JOIN PRODUCT
+        USING (PRO_NUM)     
+    	LEFT OUTER JOIN MEMBER
+        USING (MEM_ID)
+        LEFT OUTER JOIN PRODUCTFILE 
+	     USING (PRO_NUM)
+        WHERE PRO_NUM = #{proNum}
+	</select>
+	
+	<select id="hostList"  resultType="hostProDto">
+	select  pro_num
+        ,pro_name
+        ,pro_address
+        ,pro_phone
+        ,mem_id
+        ,mem_authority
+        ,pro_pic_Original
+        ,pro_pic_Rename
+        from map
+        left outer join product
+        using (pro_num)
+        left outer join member
+        using (mem_id)
+        LEFT OUTER JOIN PRODUCTFILE 
+	     USING (PRO_NUM)
+         <if test="proNum != null and proNum neq ''">
+         WHERE PRO_NUM = #{proNum}
+   	    </if>		
+        order by pro_num desc
+	 
+	</select>
+	
+	
+	<!-- update -->
+	
+	<update id="updateMap">
+	update map
+	set
+	 PRO_NAME = #{proName}
+	,PRO_ADDRESS = #{proAddress}
+	,PRO_PHONE = #{proPhone}
+	
+	 WHERE PRO_NUM = #{proNum}
+	
+	</update>
+	
+	<update id="updateProduct">
+	update product
+    set
+     pro_post=#{proPost}
+    ,pro_info=#{proInfo}
+    ,pro_notice=#{proNotice}
+    ,pro_refund=#{proRefund}
+     WHERE PRO_NUM = #{proNum}
+    
+	</update>
+	
+
+	<update id="updateProductFile">
+	update productfile
+	set
+	pro_pic_original = #{proPicOriginal}
+	,pro_pic_rename = #{proPicRename}
+	where pro_num = #{proNum}
+	</update>
+	
+	
+	<delete id="deleteProductfile">
+	delete from productfile
+	where pro_num = #{proNum}
+	</delete>
+	
+	<delete id="deleteProduct">
+	delete from product
+         where pro_num = #{proNum}
+	</delete>
+	
+	<delete id="deleteMap">
+	delete from map 
+         where pro_num = #{proNum}
+	</delete>
+	
+	
+	
+	
+	
+	
+	
+	
+	<!-- host/qna List select 옵션 -->	
+	<select id="selectHostProductList" resultType="pdvo">
+		SELECT PRO_NUM, PRO_NAME FROM QNA JOIN PRODUCT P USING(PRO_NUM)
+		WHERE P.MEM_ID = #{memId} group by PRO_NUM, PRO_NAME ORDER BY max(qna_date) desc
+	</select>
+	
+	<!-- host/qna 테이블 List -->
+	<select id="selectHostProductQnaList" resultType="qvo">
+		SELECT 	MEM_ID	, MEM_QUESTION	, QNA_DATE	, QNA_NUM , HOST_ANSWER
+		FROM QNA 
+		WHERE PRO_NUM = #{proNum}
+		  AND MEM_QUESTION IS NOT NULL
+		ORDER BY QNA_DATE DESC
+	</select>
+	
+	<!-- host/qna replyDeleteQna 관리자 답변 삭제 -->
+	<update id="replyDeleteQna" parameterType="qvo">
+		UPDATE QNA
+   		   SET HOST_ANSWER = null
+         WHERE QNA_NUM = #{qnaNum}
+	</update>
+
+	<!-- user/qna List -->
+	<select id="selectUserQnaList" resultType="qvo">
+		SELECT PRO_NUM, PRO_NAME FROM QNA WHERE MEM_ID = #{memId} group by PRO_NUM, PRO_NAME ORDER BY max(qna_date) desc
+	</select>
+	<select id="selectUserQna" resultType="qvo">
+		SELECT to_char(QNA_DATE,'yyyy"년" MM"월" dd"일"') QNA_DATE, MEM_QUESTION, QNA_NUM
+		FROM QNA WHERE MEM_ID = #{memId}
+		<if test="proNum != null and proNum neq ''">
+         AND PRO_NUM = #{proNum}
+   	    </if>		
+		ORDER BY QNA_NUM DESC
+	</select>
+	<select id="selectUserQnaCount" resultType="_int">
+		SELECT COUNT(*) FROM QNA WHERE MEM_ID = #{memId} AND PRO_NUM = #{proNum}
+	</select>
+	
+	
+
+	<!-- 상품운영시간  -->
+	<insert id="insertProTimeAll" parameterType="study.cloud.stc.product.model.vo.ProductTimeReqDto">
+		INSERT all
+		<foreach collection="values" item="value">
+		
+		INTO PROTIME VALUES( to_date(#{proDate}||''||#{value.time}, 'yyyy-mm-ddhh24')
+					, #{proNum}, #{value.price}, null)		
+		</foreach>
+		select * from dual
+	</insert>
+	<insert id="insertProTime" parameterType="map">
+		INSERT 
+		INTO PROTIME VALUES( to_date(#{proDate}||''||#{time}, 'yyyy-mm-ddhh24')
+					, #{proNum}, #{price}, null)		
+	</insert>
+	<update id="updateProTime" parameterType="map">
+		update PROTIME 
+		set  pro_price = #{price}
+		where pro_date= to_date(#{proDate}||''||#{time}, 'yyyy-mm-ddhh24')
+			and pro_num=#{proNum}
+	</update>
+</mapper>

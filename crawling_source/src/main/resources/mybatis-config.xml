@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+<configuration>
+	<settings>
+		<!-- null 값이 발생할 경우 빈칸이 아니라 NULL값으로 인식하게 setting -->
+		<setting name="jdbcTypeForNull" value="NULL"/>
+		<!-- 만약 ↓ 아래 코드를 작성하지 않는다면 mapper에서 resultMap을 선언해줘야 한다.  -->		
+		<setting name="mapUnderscoreToCamelCase" value="true"/>
+	</settings>
+	<!-- 자료형 별칭  --> 
+	<typeAliases>
+		<typeAlias type="stc.craw.s01.map.model.vo.MapVo" alias="mavo"/>		
+	</typeAliases> 
+	
+</configuration>

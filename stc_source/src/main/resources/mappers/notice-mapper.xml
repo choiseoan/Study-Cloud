@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="notice">
+  
+<insert id="insert" parameterType="novo">
+	INSERT INTO NOTICE VALUES(
+           (SELECT NVL(MAX(NOTI_NUM), 0)+1 FROM NOTICE)
+         , #{memId}
+         , #{notiIdx}
+         , #{notiTitle}
+         , #{notiContents}
+         , DEFAULT
+	 <choose>
+	 	<when test="originalFilename != null and !originalFilename.equals('')">
+	 	 , #{originalFilename}
+	 	 , #{renameFilename}
+	 	</when>
+	 	<otherwise>
+	 	 , NULL
+         , NULL
+	 	</otherwise>
+	 </choose>
+	)
+</insert>
+
+<update id="update" parameterType="novo">
+	UPDATE NOTICE
+	   SET NOTI_TITLE = #{notiTitle}
+		 , NOTI_CONTENTS = #{notiContents}
+		 , NOTI_IDX = #{notiIdx}
+		 <choose>
+		 	<when test="originalFilename != null and originalFilename neq '' and renameFilename != null and renameFilename neq ''">
+		 , ORIGINAL_FILENAME = #{originalFilename}
+		 , RENAME_FILENAME = #{renameFilename}
+		 	</when>
+		 	<otherwise>
+		 , ORIGINAL_FILENAME = null
+		 , RENAME_FILENAME = null
+		 	</otherwise>
+		 </choose>		 
+     WHERE NOTI_NUM = #{notiNum}
+</update>
+
+<delete id="delete" parameterType="novo">
+	DELETE FROM NOTICE WHERE NOTI_NUM = #{notiNum}
+</delete>
+
+<select id="selectOneCount" resultType="_int">
+	SELECT COUNT(*) CNT FROM NOTICE
+	<if test="notiIdx != null and notiIdx neq ''">
+		WHERE NOTI_IDX = #{notiIdx}		
+	</if>
+</select>
+
+<select id="selectList" resultType="novo">
+	SELECT * FROM NOTICE
+   	<if test="notiIdx != null and notiIdx neq ''">
+     WHERE NOTI_IDX = #{notiIdx}
+   	</if>          
+     ORDER BY NOTI_DATE DESC
+</select>
+
+<select id="selectNotiIdx" resultType="novo">
+	SELECT DISTINCT NOTI_IDX FROM NOTICE ORDER BY NOTI_IDX
+</select>
+</mapper>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd" >
+<configuration>
+	<settings>
+		<setting name="jdbcTypeForNull" value="NULL"></setting>
+		<setting name="mapUnderscoreToCamelCase" value="true"></setting>
+	</settings>
+	<typeAliases>
+		<typeAlias type="study.cloud.stc.test.model.vo.TestVo" alias="tvo" />
+		<typeAlias type="study.cloud.stc.member.model.vo.MemberVo"
+			alias="mvo" />
+		<typeAlias type="study.cloud.stc.notice.model.vo.NoticeVo"
+			alias="novo" />
+		<typeAlias type="study.cloud.stc.reserve.model.vo.ReserveVo"
+			alias="rsvvo" />
+		<typeAlias type="study.cloud.stc.review.model.vo.ReviewVo"
+			alias="revo" />
+		<typeAlias type="study.cloud.stc.product.model.vo.ProductVo"
+			alias="pdvo" />
+		<typeAlias type="study.cloud.stc.product.model.vo.ProductDetailDto"
+			alias="pdto"/>
+		<typeAlias type="study.cloud.stc.qna.model.vo.QnaVo" alias="qvo"/>
+		<typeAlias type="study.cloud.stc.product.model.vo.HostProductDto"
+			alias="hostProDto"/>
+		<typeAlias type="study.cloud.stc.chatting.model.vo.ChattingVo" 
+			alias="chtvo"/>
+		<typeAlias type="study.cloud.stc.chatting.model.vo.MemberRoomVo" 
+			alias="mervo"/>
+		<typeAlias type="study.cloud.stc.chatting.model.vo.ChattRoomVo" 
+			alias="chrvo"/>
+			
+	</typeAliases>
+	<mappers>
+		<mapper resource="mappers/test-mapper.xml" />
+		<mapper resource="mappers/member-mapper.xml" />
+		<mapper resource="mappers/notice-mapper.xml" />
+		<mapper resource="mappers/reserve-mapper.xml" />
+		<mapper resource="mappers/review-mapper.xml"/>
+		<mapper resource="mappers/product-mapper.xml"/>
+		<mapper resource="mappers/chat-mapper.xml"/>
+		<mapper resource="mappers/memberRoom-mapper.xml"/>
+		<mapper resource="mappers/chattroom-mapper.xml"/>
+	</mappers>
+
+</configuration>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="testMember">
+	
+	<resultMap type="tvo" id="mtvo">
+		<id column="boardNum" property="boardNum"></id>
+	</resultMap>
+		
+	<insert id="testinsert">
+	
+	</insert>
+	
+	<update id="testupdate">
+	
+	</update>
+	
+	<delete id="testdelete">
+	
+	</delete>
+	
+	<select id="testselectOne" resultType="tvo">
+		select boardNum, boardWriter, boardSubject, boardContent, boardDate from BOARDTBL where boardNum = ${boardNum} order by boardNum desc
+	</select>
+	
+	<select id="testselectList" resultType="tvo">
+		select boardNum, boardWriter, boardSubject, boardContent, boardDate from BOARDTBL order by boardNum desc
+	</select>
+
+
+	<select id="selectCount" resultType="_int">
+		select count(*) cnt from BOARDTBL
+	</select>
+</mapper>

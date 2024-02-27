@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="memberns">
+	
+	<resultMap type="mvo" id="mmvo">
+  		<id column="MEM_ID" property="memId"/>
+  		<result column="MEM_PASSWD" property="memPasswd"/>
+  		<result column="MEM_NAME" property="memName"/>
+  		<result column="MEM_PHONE" property="memPhone"/>
+  		<result column="MEM_EMAIL" property="memEmail"/>
+  		<result column="MEM_QUIT" property="memQuit"/>
+  		<result column="MEM_AUTHORITY" property="memAuthority"/>
+  		<result column="MEM_SNS" property="memSns"/>
+  	</resultMap>
+		
+	
+	<!-- 일반회원 등록,수정,조회 -->
+	<insert id="insertUser">
+		INSERT INTO MEMBER VALUES(#{memId},#{memPasswd},#{memName},#{memPhone},#{memEmail}, 1 ,'ROLE_USER','null')
+	</insert>
+	
+	<insert id="insertJoin">
+    INSERT INTO MEMBER (MEM_ID, MEM_PASSWD, MEM_NAME, MEM_PHONE, MEM_EMAIL, MEM_QUIT, MEM_AUTHORITY) 
+    VALUES (
+        #{memId},
+        #{memPasswd},
+        #{memName},
+        #{memPhone},
+        #{memEmail},
+        1,
+        <choose>
+            <when test="memAuthority == 'ROLE_USER'">'ROLE_USER'</when>
+            <otherwise>'ROLE_HOST'</otherwise>
+        </choose>
+        )
+	</insert>
+	
+			
+	<update id="updateUser">
+		UPDATE MEMBER
+		   SET MEM_PASSWD = #{memPasswd}, 
+			   MEM_NAME = #{memName}, 
+			   MEM_PHONE = #{memPhone}, 
+			   MEM_EMAIL = #{memEmail}, 
+		 WHERE MEM_ID = #{memId}
+	</update>
+	
+	<select id="selectCountUser" resultType="_int">
+		SELECT COUNT(*) CNT FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_USER'
+	</select>	
+	
+	<select id="selectUnblockCountUser" resultType="_int">
+		SELECT COUNT(*) CNT FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_USER' AND MEM_QUIT = 1
+	</select>	
+	<select id="selectBlockCountUser" resultType="_int">
+		SELECT COUNT(*) CNT FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_USER' AND MEM_QUIT = 0
+	</select>	
+
+	<select id="SelectListUser" resultType="mvo">
+		SELECT MEM_ID,MEM_PASSWD,MEM_NAME,MEM_PHONE,MEM_EMAIL,MEM_QUIT,MEM_AUTHORITY,MEM_SNS FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_USER'
+	</select>
+
+	<select id="selectUnblockUser" resultType="mvo">
+		SELECT MEM_ID,MEM_PASSWD,MEM_NAME,MEM_PHONE,MEM_EMAIL,MEM_QUIT,MEM_AUTHORITY,MEM_SNS FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_USER' AND MEM_QUIT = 1
+	</select>
+	
+	<select id="selectBlockUser" resultType="mvo">
+		SELECT MEM_ID,MEM_PASSWD,MEM_NAME,MEM_PHONE,MEM_EMAIL,MEM_QUIT,MEM_AUTHORITY,MEM_SNS FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_USER' AND MEM_QUIT = 0
+	</select>
+ 	 
+	
+	<!-- 호스트회원 등록,수정,조회 -->
+	<insert id="insertHost">
+		INSERT INTO MEMBER VALUES(#{memId},#{memPasswd},#{memName},#{memPhone},#{memEmail}, 1 ,'ROLE_HOST','null')
+	</insert>
+			
+	<update id="updateHost">
+		UPDATE MEMBER
+		   SET MEM_PASSWD = #{memPasswd}, 
+			   MEM_NAME = #{memName}, 
+			   MEM_PHONE = #{memPhone}, 
+			   MEM_EMAIL = #{memEmail} 
+		 WHERE MEM_ID = #{memId}
+	</update>
+	
+	<update id="updateHostInfo">
+		UPDATE MEMBER
+		   SET MEM_PASSWD = #{memPasswd}, 
+			   MEM_PHONE = #{memPhone}, 
+			   MEM_EMAIL = #{memEmail} 
+		 WHERE MEM_ID = #{memId} AND MEM_SNS IS null
+	</update>
+	
+	<select id="selectCountHost" resultType="_int">
+		SELECT COUNT(*) CNT FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_HOST'
+	</select>	
+	
+	<select id="selectUnblockCountHost" resultType="_int">
+		SELECT COUNT(*) CNT FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_HOST' AND MEM_QUIT = 1
+	</select>	
+	<select id="selectBlockCountHost" resultType="_int">
+		SELECT COUNT(*) CNT FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_HOST' AND MEM_QUIT = 0
+	</select>	
+	
+	<select id="selectListHost" resultType="mvo">
+		SELECT MEM_ID,MEM_PASSWD,MEM_NAME,MEM_PHONE,MEM_EMAIL,MEM_QUIT,MEM_AUTHORITY,MEM_SNS FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_HOST'
+	</select>
+
+	<select id="selectUnblockHost" resultType="mvo">
+		SELECT MEM_ID,MEM_PASSWD,MEM_NAME,MEM_PHONE,MEM_EMAIL,MEM_QUIT,MEM_AUTHORITY,MEM_SNS FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_HOST' AND MEM_QUIT = 1
+	</select>
+	
+	<select id="selectBlockHost" resultType="mvo">
+		SELECT MEM_ID,MEM_PASSWD,MEM_NAME,MEM_PHONE,MEM_EMAIL,MEM_QUIT,MEM_AUTHORITY,MEM_SNS FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_HOST' AND MEM_QUIT = 0
+	</select>
+	
+	<select id="quitStdInfo" resultType="mvo">
+		SELECT * FROM MEMBER WHERE MEM_ID= #{memId}
+	</select>
+	
+	<!-- <select id="selectListHost" resultType="mvo">
+		SELECT MEM_ID,MEM_PASSWD,MEM_NAME,MEM_PHONE,MEM_EMAIL,MEM_QUIT,MEM_AUTHORITY,MEM_SNS FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_HOST'
+	</select> -->
+	
+	<!-- 카카오연동회원 -->
+	<insert id="kakaoinsert" >
+		INSERT INTO MEMBER VALUES(#{memId},NULL,#{memName},NULL,#{memEmail}, 1 ,'ROLE_USER','kakao')
+	</insert>
+
+	<select id="kakaoselect" resultType="mvo">
+		SELECT MEM_ID FROM MEMBER WHERE MEM_ID = #{memId}
+	</select>
+	
+	
+	<select id="kakaoselectauth" resultType="mvo">
+		SELECT MEM_AUTHORITY FROM MEMBER WHERE MEM_ID = #{memId}
+	</select>
+	
+	<select id="selectSnsCount" resultType="_int">
+		SELECT COUNT(*) CNT FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_USER' AND MEM_SNS != 'null'
+	</select>
+	
+	<select id="getInfo" resultType="mvo">
+		select * FROM MEMBER WHERE MEM_ID = #{memId}
+	</select>
+	
+	<select id="selectSnsUser" resultType="mvo">
+		select MEM_ID,MEM_PASSWD,MEM_NAME,MEM_PHONE,MEM_EMAIL,MEM_QUIT,MEM_AUTHORITY,MEM_SNS FROM MEMBER WHERE MEM_AUTHORITY = 'ROLE_USER' AND MEM_SNS != 'null'
+	</select>
+		
+	<!-- 회원전체 탈퇴수정, 차단, 차단 해제, 삭제, 조회, 비밀번호 변환 -->
+	<update id="Quitupdate">		
+		UPDATE MEMBER
+		   SET MEM_QUIT = #{memQuit}
+		 WHERE MEM_ID = #{memId}
+	</update>
+	
+	<update id="mailPasswd">
+		UPDATE MEMBER
+			SET MEM_PASSWD = #{memPasswd}
+			WHERE MEM_ID= #{memId} AND
+			MEM_EMAIL = #{memEmail}
+	</update>
+	
+	<update id="memberblock">
+		UPDATE MEMBER SET MEM_QUIT= 0 WHERE MEM_ID= #{memId}
+	</update>
+	
+	<update id="memberUnblock">
+		UPDATE MEMBER SET MEM_QUIT= 1 WHERE MEM_ID= #{memId}
+	</update>
+	
+	<delete id="delete">
+		DELETE FROM MEMBER WHERE MEM_ID = #{memId}
+	</delete>
+	
+	<select id="SelectOne" resultType="mvo">
+		SELECT MEM_ID, MEM_PASSWD, MEM_NAME, MEM_PHONE, MEM_EMAIL, MEM_QUIT, MEM_AUTHORITY, MEM_SNS
+		FROM MEMBER WHERE MEM_ID = #{memId} order by MEM_ID
+	</select>
+	
+	<select id="selectList" resultType="mvo">
+		SELECT MEM_ID, MEM_PASSWD, MEM_NAME, MEM_PHONE, MEM_EMAIL, MEM_QUIT, MEM_AUTHORITY, MEM_SNS
+		FROM MEMBER order by MEM_ID
+	</select>
+
+	<select id="selectCount" resultType="_int">
+		SELECT COUNT(*) FROM MEMBER
+	</select>
+	
+	<select id="updatePasswd" resultType="mvo">
+		SELECT * FROM MEMBER WHERE MEM_ID= #{memId} AND MEM_EMAIL=#{memEmail} AND MEM_SNS IS null
+	</select>
+ 	 <select id="findAccount" resultType="mvo">
+		SELECT * FROM MEMBER WHERE MEM_NAME= #{memName} AND MEM_PHONE=#{memPhone} AND MEM_EMAIL=#{memEmail} AND MEM_SNS IS null
+	</select>
+	
+	<select id="mailId" resultType="mvo">
+		SELECT * FROM MEMBER WHERE MEM_NAME= #{memName} AND MEM_PHONE=#{memPhone} AND MEM_EMAIL=#{memEmail} AND MEM_SNS IS null
+	</select>
+	
+	<select id="idCheck" resultType="_int">
+		SELECT COUNT(*) FROM MEMBER WHERE MEM_ID = #{memId}
+	</select>
+	
+	<select id="viewDetailInfo" resultType="mvo">
+		SELECT * FROM MEMBER WHERE MEM_ID= #{memId}
+	</select>
+	
+</mapper>

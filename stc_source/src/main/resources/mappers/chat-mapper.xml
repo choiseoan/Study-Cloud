@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="chatns">
+	<resultMap type="chtvo" id="cchtvo">
+		<id column="CHA_NUM" property="chaNum"/>
+		<result column="CHA_CONTENTS" property="chaContents"/>
+		<result column="CHA_TIME" property="chaTime"/>
+		<result column="MEM_ID" property="memId"/>
+		<result column="ROOM_ID" property="roomId"/>
+		<result column="CHA_READCOUNT" property="chareadcount"/>
+	</resultMap>
+
+	<insert id="addtMessage" parameterType="chtvo">
+		INSERT INTO CHAT (CHA_NUM, CHA_CONTENTS, CHA_TIME, MEM_ID, ROOM_ID,CHA_READCOUNT) VALUES( (SELECT NVL(MAX(CHA_NUM), 0)+1 FROM CHAT) , #{chaContents}, SYSDATE, #{memId}, #{roomId}, '1') 
+	</insert>
+	
+	<select id="selectListMessage" resultType="chtvo">
+		SELECT CHA_NUM, CHA_CONTENTS,CHA_TIME, MEM_ID ,ROOM_ID FROM CHAT WHERE ROOM_ID = #{roomId} ORDER BY CHA_NUM ASC
+	</select>
+	
+	<update id="reduceCount">
+		UPDATE CHAT
+		SET CHA_READCOUNT = 0
+		WHERE CHA_CONTENTS = #{chaContents}
+		AND CHA_NUM = (SELECT MAX(CHA_NUM) FROM CHAT WHERE CHA_CONTENTS = #{chaContents})
+	</update>
+	
+	<update id="entreducecount">
+		UPDATE CHAT
+		SET CHA_READCOUNT = 0
+		WHERE MEM_ID != #{memId} 
+		AND CHA_READCOUNT != 0		
+	</update>
+	
+	<select id="viewUnreadmsg" resultType="_int">
+		SELECT COUNT(*) CNT FROM CHAT WHERE MEM_ID = #{memId} AND CHA_READCOUNT != 0 AND ROOM_ID = #{roomId} AND CHA_CONTENTS = #{chaContents}
+	</select>
+</mapper>

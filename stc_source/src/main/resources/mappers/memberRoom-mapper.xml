@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="memroomns">
+	<resultMap type="mervo" id="mmervo">
+		<id column="MEM_ID" property="memId"/>
+		<result column="ROOM_ID" property="roomId"/>
+		<result column="CONNECT_STATUS" property="connectStatus"/>
+	</resultMap>
+
+	<select id="viewMemberId" resultType="mervo">
+		SELECT * FROM MEMBER_ROOM WHERE MEM_ID= #{memId} AND ROOM_ID = #{roomId}
+	</select>
+	
+	<insert id="addMemId">
+		INSERT INTO MEMBER_ROOM(MEM_ID, ROOM_ID, CONNECT_STATUS) VALUES(#{memId}, #{roomId}, 'OFFLINE')
+	</insert>
+	
+	<select id="selectAdminEntry"  resultType="mervo">
+		SELECT  a.MEM_ID
+	    ,   a.ROOM_ID
+	    ,   a.CONNECT_STATUS
+	    FROM MEMBER_ROOM a
+	    INNER JOIN MEMBER b
+			ON	a.MEM_ID = b.MEM_ID
+	    WHERE	a.ROOM_ID = #{roomId}
+	    AND		a.MEM_ID = b.MEM_ID
+	    AND		b.MEM_AUTHORITY = 'ROLE_ADMIN'	
+	</select>
+	
+	<select id="selectUserEntry"  resultType="mervo">
+		SELECT  a.MEM_ID
+	    ,   a.ROOM_ID
+	    ,   a.CONNECT_STATUS
+	    FROM MEMBER_ROOM a
+	    INNER JOIN MEMBER b
+			ON	a.MEM_ID = b.MEM_ID
+	    WHERE	a.ROOM_ID = #{roomId}
+	    AND		a.MEM_ID = b.MEM_ID
+	    AND		b.MEM_AUTHORITY = 'ROLE_USER'	
+	</select>
+	
+	<update id="offlineUser">
+		UPDATE MEMBER_ROOM SET CONNECT_STATUS= 'OFFLINE' where MEM_ID= #{memId} AND ROOM_ID= #{roomId}
+	</update>
+	
+	<update id="onlineUser">
+		UPDATE MEMBER_ROOM SET CONNECT_STATUS= 'ONLINE' where MEM_ID= #{memId} AND ROOM_ID= #{roomId}
+	</update>
+</mapper>

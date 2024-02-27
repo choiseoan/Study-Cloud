@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="reserve">
+
+	<resultMap type="rsvvo" id="rvoMap">
+		<id column="RSV_NUM" property="rsvNum" />
+		<result column="RSV_DATE" property="rsvDate" />
+		<result column="RSV_PERSON" property="rsvPerson" />
+		<result column="RSV_AMOUNT" property="rsvAmount" />
+		<result column="RSV_STATUS" property="rsvStatus" />
+		<result column="RSV_TIME" property="rsvTime" />
+		<result column="PRO_NUM" property="proNum" />
+		<result column="PRO_NAME" property="proName" />
+		<result column="REG_DATE" property="regDate" />
+	</resultMap>
+	
+	<!-- 예약하기 -->
+	<insert id="insertReservation" parameterType="study.cloud.stc.reserve.model.vo.ReserveTimeReqDto">
+		<selectKey keyProperty="regDate" resultType="string" order="BEFORE">
+		select to_char(sysdate, 'yyyy-mm-dd hh24:mi:ss') regDate from dual
+		</selectKey>		
+		INSERT ALL
+		<foreach collection="rsvTime" item="rsvTime" index="index">
+		INTO RESERVE VALUES (
+		(SELECT (NVL(MAX(RSV_NUM),0) + #{index} + 1) FROM RESERVE)
+		, to_date((#{rsvDate}||''||#{rsvTime}), 'yyyy-mm-ddhh24')
+		, #{rsvPerson}
+		, #{memId}
+		, ( select (#{rsvPerson}* pro_price ) from protime where  pro_num = #{proNum} and pro_date = to_date((#{rsvDate}||''||#{rsvTime}), 'yyyy-mm-ddhh24')   )
+		, 0
+		, #{rsvTime}
+		, to_date(#{regDate}, 'yyyy-mm-dd hh24:mi:ss') 
+		<!-- sysdate -->
+		,#{proNum})
+		</foreach>
+		select * from dual
+	</insert>
+
+	
+	<!-- 예약번호업데이트 -->
+	<update id="updateRsvNumToProTime" parameterType="map">
+		<selectKey order="BEFORE" keyProperty="rsvNum" resultType="_int">
+		 select rsv_num from reserve where  pro_num = #{proNum} and rsv_date = to_date((#{rsvDate}||''||#{rsvTime}), 'yyyy-mm-ddhh24')
+		</selectKey>
+		update protime 
+		set rsv_num = #{rsvNum}
+		where pro_num = #{proNum} and pro_date = to_date((#{rsvDate}||''||#{rsvTime}), 'yyyy-mm-ddhh24')
+	</update>
+	
+	 <select id="selectRsvNum" parameterType="study.cloud.stc.reserve.model.vo.ReserveTimeReqDto" resultType="study.cloud.stc.reserve.model.vo.ReserveTimeReqDto">
+	 	SELECT RSV_NUM, RSV_DATE, RSV_PERSON, MEM_ID, RSV_AMOUNT, RSV_STATUS, PRO_NUM, REG_DATE
+		FROM RESERVE 
+		WHERE MEM_ID='${memId}' 
+			<!-- AND TO_DATE(RSV_DATE, 'yy/MM/dd') = TO_DATE(#{rsvDate}, 'yy/MM/dd')  -->
+			AND PRO_NUM = TO_NUMBER(#{proNum})
+			AND REG_DATE = to_date(#{regDate}, 'yyyy-mm-dd hh24:mi:ss')
+	 </select>
+	 
+	<select id="selectProName" parameterType="study.cloud.stc.reserve.model.vo.ReserveTimeReqDto" resultType="study.cloud.stc.reserve.model.vo.MapVo">
+		select pro_num, pro_name, pro_phone from map where pro_num = #{proNum}
+	</select>
+	
+	<select id="selectProNameList" resultType="study.cloud.stc.reserve.model.vo.MapVo">
+		select pro_num, pro_name from map where pro_num in (select distinct pro_num from reserve)
+	</select>
+
+	<!-- 예약삭제 -->
+	<update id="updateForRsvdelete">
+	update protime set rsv_num = null 
+		where rsv_num in (select rsv_num from reserve WHERE REG_DATE = to_date(#{regDate}, 'yyyy-mm-dd hh24:mi:ss') and pro_num=#{proNum} )
+	</update>
+	<delete id="rsvdelete">
+		DELETE FROM reserve WHERE REG_DATE = to_date(#{regDate}, 'yyyy-mm-dd hh24:mi:ss') and pro_num=#{proNum}
+	</delete>
+
+	<select id="rsvselectOne" resultType="rsvvo">
+		SELECT RSV_NUM, RSV_DATE, RSV_PERSON, MEM_ID, RSV_AMOUNT, RSV_STATUS, RSV_TIME
+		FROM reserve WHERE MEM_ID='${memId}' order by RSV_NUM
+	</select>
+	
+	<select id="selectReserveListForHost" parameterType="study.cloud.stc.reserve.model.vo.ReserveTimeReqDto" resultType="rsvvo">
+		select rsv.rsv_num, rsv.reg_date, rsv.rsv_date, m.pro_num, m.pro_name, rsv.mem_id
+		from map m, 
+            (select rsv.mem_id, MIN(rsv.rsv_num) as rsv_num, to_char(rsv.reg_date, 'yyyy-mm-dd hh24:mi:ss') as reg_date, MIN(to_char(rsv.rsv_date, 'yyyy-mm-dd')) as rsv_date, rsv.pro_num
+                from reserve rsv 
+                where rsv.pro_num in (select prod.pro_num from product prod where mem_id = #{memId})
+                group by rsv.reg_date, rsv.pro_num, rsv.mem_id) rsv
+		where rsv.pro_num = m.pro_num
+	</select>
+	
+	<select id="selectListForHost" parameterType="study.cloud.stc.reserve.model.vo.ReserveTimeReqDto" resultType="rsvvo">
+		select distinct(m.pro_name) as pro_name, m.pro_num
+		from map m, 
+            (select rsv.mem_id, MIN(rsv.rsv_num) as rsv_num, to_char(rsv.reg_date, 'yyyy-mm-dd hh24:mi:ss') as reg_date, MIN(to_char(rsv.rsv_date, 'yyyy-mm-dd')) as rsv_date, rsv.pro_num
+                from reserve rsv 
+                where rsv.pro_num in (select prod.pro_num from product prod where mem_id = #{memId})
+                group by rsv.reg_date, rsv.pro_num, rsv.mem_id) rsv
+		where rsv.pro_num = m.pro_num
+		order by m.pro_name ASC
+	</select>
+
+	<select id="selectReserveList" parameterType="study.cloud.stc.reserve.model.vo.ReserveTimeReqDto" resultType="rsvvo">
+		select m.pro_name, r.pro_num, r.reg_date , r.rsv_date
+		from map m, 
+		    (select pro_num, to_char(reg_date, 'yyyy-mm-dd hh24:mi:ss') reg_date, MIN(rsv_date) as rsv_date from reserve where mem_id = #{memId}  group by pro_num, reg_date) r
+		where m.pro_num = r.pro_num
+		order by r.rsv_date DESC
+	</select>
+	
+	<select id="selectList" parameterType="study.cloud.stc.reserve.model.vo.ReserveTimeReqDto" resultType="rsvvo">
+		select distinct(m.pro_name) as pro_name, r.pro_num
+		from map m, 
+		    (select pro_num, to_char(reg_date, 'yyyy-mm-dd hh24:mi:ss') reg_date, MIN(rsv_date) as rsv_date from reserve where mem_id = #{memId}  group by pro_num, reg_date) r
+		where m.pro_num = r.pro_num
+		order by m.pro_name ASC
+	</select>
+
+	<select id="selectTotalCount" resultType="_int">
+		SELECT COUNT(*) FROM reserve
+	</select>
+	
+	<select id="selectTimePriceRsvList" resultType="study.cloud.stc.product.model.vo.ProductTimePriceDto">
+		SELECT to_char(pro_date, 'hh24') time, pro_price price, rsv_num, PRO_NUM 
+		FROM PROTIME  
+		where PRO_NUM =#{proNum} and trunc(pro_date) =  #{proDate}
+		order by time
+	</select>
+	
+</mapper>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="review">
+
+	<insert id="reinsert">
+		INSERT INTO review_tbl VALUES (
+		#{proNum}
+		, #{memid}
+		, #{recont}
+		, #{hostid}
+		, #{hostre}
+		, default)
+	</insert>
+
+	<update id="reupdate">
+
+	</update>
+
+	<delete id="redelete">
+		DELETE FROM REVIEW WHERE PRO_NUM = #{proNum} and MEM_ID = #{memID}
+	</delete>
+
+	<select id="selectUserReviewList" resultType="study.cloud.stc.review.model.vo.ReviewResReqVo">
+		SELECT MEM_ID, REV_CONTENTS, REV_DATE, REV_NUM, HOST_REPLY
+		 FROM REVIEW V
+		INNER JOIN RESERVE R
+		USING (RSV_NUM)
+		WHERE PRO_NUM = #{proNum} AND MEM_ID = #{memId}
+	</select>
+	
+	<select id="selectReviewList" resultType="study.cloud.stc.review.model.vo.ReviewResReqVo">
+		SELECT MEM_ID, REV_CONTENTS, REV_DATE, REV_NUM, HOST_REPLY
+		 FROM REVIEW V
+		INNER JOIN RESERVE R
+		USING (RSV_NUM)
+		WHERE PRO_NUM = #{proNum} 
+	</select>
+
+
+</mapper>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="chroom">
+	<resultMap type="chrvo" id="cchrvo">
+		<id column="CHA_ROOM_ID" property="chaRoomId"/>
+		<result column="ROOM_CONTENTS" property="roomContents"/>
+		<result column="ROOM_LASTDATE" property="roomLastDate"/>
+	</resultMap>
+	<resultMap type="mervo" id="mmervo">
+		<id column="MEM_ID" property="memId"/>
+		<result column="ROOM_ID" property="roomId"/>
+		<result column="CONNECT_STATUS" property="connectStatus"/>	
+	</resultMap>
+	
+	
+	<select id="viewRoomId" resultType="chrvo">
+		SELECT * FROM CHATTROOM WHERE CHA_ROOM_ID = #{chaRoomId}
+	</select>
+	
+	<insert id="addRoomId">
+		INSERT INTO CHATTROOM (CHA_ROOM_ID) VALUES(#{chaRoomId})
+	</insert>
+	
+	<update id="updateChattRoom">
+		UPDATE CHATTROOM SET ROOM_CONTENTS = #{roomContents} , ROOM_LASTDATE = SYSDATE WHERE CHA_ROOM_ID = #{chaRoomId}
+	</update>
+	
+	<select id="selectListChattRoom" resultType="chrvo">
+		SELECT  a.CHA_ROOM_ID,
+        a.ROOM_CONTENTS,
+        a.ROOM_LASTDATE
+		FROM CHATTROOM a
+		INNER JOIN MEMBER_ROOM b
+		ON a.CHA_ROOM_ID = b.ROOM_ID
+		WHERE b.ROOM_ID != #{chaRoomId}
+		GROUP BY a.CHA_ROOM_ID, a.ROOM_CONTENTS, a.ROOM_LASTDATE
+		<![CDATA[HAVING COUNT(b.MEM_ID) < 2]]>
+	</select>
+	
+	<select id="searchReqChattRoom" resultType="chrvo">
+		SELECT  a.CHA_ROOM_ID,
+        a.ROOM_CONTENTS,
+        a.ROOM_LASTDATE
+		FROM CHATTROOM a
+		INNER JOIN MEMBER_ROOM b
+		ON a.CHA_ROOM_ID = b.ROOM_ID
+			WHERE CHA_ROOM_ID LIKE '%'||#{chaRoomId}||'%'
+			AND b.ROOM_ID != #{roomId}
+		GROUP BY a.CHA_ROOM_ID, a.ROOM_CONTENTS, a.ROOM_LASTDATE
+		<![CDATA[HAVING COUNT(b.MEM_ID) < 2]]>
+	</select>
+	
+	<select id="searchListChattRoom" resultType="chrvo">
+		SELECT *  FROM CHATTROOM WHERE CHA_ROOM_ID LIKE '%admin%'
+	</select>
+	
+	<select id="selectCount" resultType="_int">
+		SELECT COUNT(*) AS count
+		FROM (
+		    SELECT a.CHA_ROOM_ID
+		    FROM CHATTROOM a
+		    INNER JOIN MEMBER_ROOM b ON a.CHA_ROOM_ID = b.ROOM_ID
+		    GROUP BY a.CHA_ROOM_ID
+		    <![CDATA[HAVING COUNT(b.MEM_ID) < 2]]>
+		) subquery
+		WHERE CHA_ROOM_ID != #{chaRoomId}
+	</select>
+	
+	<select id="allListChattRoom" resultType="chrvo">
+		SELECT  a.CHA_ROOM_ID,
+        a.ROOM_CONTENTS,
+        a.ROOM_LASTDATE
+		FROM CHATTROOM a
+		INNER JOIN MEMBER_ROOM b
+		ON a.CHA_ROOM_ID = b.ROOM_ID
+		GROUP BY a.CHA_ROOM_ID, a.ROOM_CONTENTS, a.ROOM_LASTDATE
+		<![CDATA[HAVING COUNT(b.MEM_ID) < 2]]>
+	</select>
+	
+	<select id="allEnterListChattRoom" resultType="chrvo">
+		SELECT  a.CHA_ROOM_ID,
+        a.ROOM_CONTENTS,
+        a.ROOM_LASTDATE
+		FROM CHATTROOM a
+		INNER JOIN MEMBER_ROOM b
+		ON a.CHA_ROOM_ID = b.ROOM_ID
+		WHERE b.MEM_ID = #{memId}
+		GROUP BY a.CHA_ROOM_ID, a.ROOM_CONTENTS, a.ROOM_LASTDATE	
+	</select>
+	
+	<select id="searchAllListChattRoom" resultType="chrvo">
+		SELECT  a.CHA_ROOM_ID,
+        a.ROOM_CONTENTS,
+        a.ROOM_LASTDATE
+		FROM CHATTROOM a
+		INNER JOIN MEMBER_ROOM b
+		ON a.CHA_ROOM_ID = b.ROOM_ID
+		GROUP BY a.CHA_ROOM_ID, a.ROOM_CONTENTS, a.ROOM_LASTDATE
+		<![CDATA[HAVING COUNT(b.MEM_ID) < 2]]>
+	</select>
+	
+	
+	<select id="searchRoomCount" resultType="_int" >
+		SELECT COALESCE(SUM(cnt), 0) total_cnt
+		FROM (
+		SELECT COUNT(*) cnt
+		FROM CHATTROOM a
+		INNER JOIN MEMBER_ROOM b
+		ON a.CHA_ROOM_ID = b.ROOM_ID
+		WHERE CHA_ROOM_ID LIKE '%'||#{chaRoomId}||'%'
+		GROUP BY a.CHA_ROOM_ID, a.ROOM_CONTENTS, a.ROOM_LASTDATE
+	<![CDATA[HAVING COUNT(b.MEM_ID) < 2]]>
+	) sub
+	</select>
+	
+	
+</mapper>
